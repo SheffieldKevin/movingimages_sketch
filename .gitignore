@@ -1,0 +1,28 @@
+# For guidance on .gitignore see: http://stackoverflow.com/questions/49478/git-ignore-file-for-xcode-projects
+# xcode noise
+build/
+DerivedData/
+project.xcworkspace
+project.xcworkspace/*
+xcuserdata
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.o
+
+# osx noise
+.DS_Store
+.LSOverride
+.Trashes
+*.swp
+*~.nib
+
+# Whitelist defualts.
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+*.moved-aside
+
