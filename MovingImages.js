@@ -1,10 +1,6 @@
 // To use this file:
 // @import 'MovingImages.js';
 
-function miLog(logText) {
-  log(logText)
-}
-
 function hexDigitToNumber(digit) {
   var hexDigitTable = '0123456789ABCDEF'
   for (i = 0 ; i < 16 ; ++i) {
