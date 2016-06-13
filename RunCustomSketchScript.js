@@ -1,11 +1,6 @@
 @import '~/github/movingimages_sketch/MovingImages.js';
 
-log('This is the mi log text');
-
 log(context);
-
-var documentName = context.document.displayName();
-log('The current document is named: ' + documentName);
 
 var selectedLayers = context.selection;
 var selectedCount = selectedLayers.count();
@@ -21,7 +16,7 @@ if (selectedCount == 0) {
     if (layer.class() == 'MSShapeGroup') {
       // log(layer.treeAsDictionary())
       var frame = layer.frame()
-      log(miConvertMSRect(frame))
+      log(MovingImages.convertMSRect(frame))
       var rect = frame.rect()
       
       var bezier = layer.bezierPathInRect(rect) // This returns an NSBezierPath
@@ -37,17 +32,17 @@ if (selectedCount == 0) {
       log(gradientPoints.class())
       var point0 = gradientPoints.points().objectAtIndex(0)
       log(point0)
-      log(miConvertStringToPoint(point0))
+      log(MovingImages.convertStringToPoint(point0))
       log(point0.class())
-      log(miConvertPointsToLine(gradientPoints))
+      log(MovingImages.convertPointsToLine(gradientPoints))
     }
     log('I am here')
     fill = layer.style().fills().objectAtIndex(0);
     log(fill.color())
     // fill.color = MSColor.colorWithSVGString("#d00");
-    log(miConvertMSColor(fill.color()))
+    log(MovingImages.convertMSColor(fill.color()))
     var newColor = fill.color().colorWithAlpha(0.5);
-    log(miConvertMSColor(newColor))
+    log(MovingImages.convertMSColor(newColor))
     log(newColor);
     log(newColor.hexValue());
     log(newColor.alpha());

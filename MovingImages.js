@@ -1,59 +1,109 @@
 // To use this file:
 // @import 'MovingImages.js';
 
-function hexDigitToNumber(digit) {
-  var hexDigitTable = '0123456789ABCDEF'
-  for (i = 0 ; i < 16 ; ++i) {
-    if (hexDigitTable[i] == digit) {
-      return i
+var MovingImages = {};
+
+(function() {
+  MovingImages.hexDigitNumber = function(digit) {
+    var hexDigitTable = '0123456789ABCDEF'
+    for (i = 0 ; i < 16 ; ++i) {
+      if (hexDigitTable[i] == digit) {
+        return i
+      }
     }
-  }
-  return 0
-}
-
-// Assumes string is not prefixed with a #
-function redComponent(hexString) {
-  var number1 = hexDigitToNumber(hexString[0]) * 16.0
-  var number2 = hexDigitToNumber(hexString[1])
-  return (number1 + number2) / 255.0
-}
-
-// Assumes string is not prefixed with a #
-function greenComponent(hexString) {
-  var number1 = hexDigitToNumber(hexString[2]) * 16.0
-  var number2 = hexDigitToNumber(hexString[3])
-  return (number1 + number2) / 255.0
-}
-
-// Assumes string is not prefixed with a #
-function blueComponent(hexString) {
-  var number1 = hexDigitToNumber(hexString[4]) * 16.0;
-  var number2 = hexDigitToNumber(hexString[5]);
-  return (number1 + number2) / 255.0;
-}
-
-function miConvertAlphaColor(msColor) {
-  var hexString = String(msColor.hexValue())
-  var dictionary = {
-    red: redComponent(hexString),
-    green: greenComponent(hexString),
-    blue: blueComponent(hexString),
-    alpha: msColor.alpha(),
-    colorcolorprofilename: 'kCGColorSpaceSRGB'
+    return 0
   };
-  return dictionary;
-}
+  var hexDigitToNumber = MovingImages.hexDigitNumber;
+  
+  MovingImages.redComponent = function(hexString) {
+    var number1 = hexDigitToNumber(hexString[0]) * 16.0
+    var number2 = hexDigitToNumber(hexString[1])
+    return (number1 + number2) / 255.0
+  };
+  var redComponent = MovingImages.redComponent;
 
-function miConvertMSColor(msColor) {
-  if (msColor.alpha() < 0.997) {
-    return miConvertAlphaColor(msColor);
-  }
-  else {
-    return msColor.hexValue();
-  }
-}
+  MovingImages.greenComponent = function(hexString) {
+    var number1 = hexDigitToNumber(hexString[2]) * 16.0
+    var number2 = hexDigitToNumber(hexString[3])
+    return (number1 + number2) / 255.0
+  };
+  var greenComponent = MovingImages.greenComponent;
 
-function miConvertMSRect(msRect) {
+  // Assumes string is not prefixed with a #
+  MovingImages.blueComponent = function(hexString) {
+    var number1 = hexDigitToNumber(hexString[4]) * 16.0;
+    var number2 = hexDigitToNumber(hexString[5]);
+    return (number1 + number2) / 255.0;
+  };
+  var blueComponent = MovingImages.blueComponent;
+
+  MovingImages.convertAlphaColor = function(msColor) {
+    var hexString = String(msColor.hexValue())
+    var dictionary = {
+      red: redComponent(hexString),
+      green: greenComponent(hexString),
+      blue: blueComponent(hexString),
+      alpha: msColor.alpha(),
+      colorcolorprofilename: 'kCGColorSpaceSRGB'
+    };
+    return dictionary;
+  };
+  var convertAlphaColor = MovingImages.convertAlphaColor;
+  
+  MovingImages.convertMSColor = function(msColor) {
+    if (msColor.alpha() < 0.997) {
+      return convertAlphaColor(msColor);
+    }
+    else {
+      return msColor.hexValue();
+    }
+  };
+  var convertMSColor = MovingImages.convertMSColor
+
+  MovingImages.convertMSRect = function(msRect) {
+    return {
+      size: {
+        width: msRect.width(),
+        height: msRect.height()
+      },
+      origin: {
+        x: msRect.x(),
+        y: msRect.y()
+      }
+    };  
+  };
+  var convertMSRect = MovingImages.convertMSRect;
+  
+  MovingImages.convertStringToPoint = function(pointString) {
+    var charactersToRemove = NSCharacterSet.characterSetWithCharactersInString('{} ');
+    var strippedString = pointString.stringByTrimmingCharactersInSet(charactersToRemove);
+    var commaSet = NSCharacterSet.characterSetWithCharactersInString(',');
+    var components = strippedString.componentsSeparatedByCharactersInSet(commaSet);
+    var x = components[0].doubleValue();
+    var y = components[1].doubleValue();
+    return {
+      x: x,
+      y: y
+    };
+  };
+  var convertStringToPoint = MovingImages.convertStringToPoint;
+  
+  MovingImages.convertPointsToLine = function(pointsArray) {
+    // MSGradientPointArray
+    var thePoints = pointsArray.points();
+    var startPoint = MovingImages.convertStringToPoint(thePoints[0]);
+    var endPoint = MovingImages.convertStringToPoint(thePoints[1]);
+    return {
+      startpoint: startPoint,
+      endpoint: endPoint
+    };
+  };
+  var convertPointsToLine = MovingImages.convertPointsToLine;
+
+})();
+
+/*
+MovingImages.ConvertMSRect = function(msRect) {
   return {
     size: {
       width: msRect.width(),
@@ -63,10 +113,10 @@ function miConvertMSRect(msRect) {
       x: msRect.x(),
       y: msRect.y()
     }
-  };
-}
+  };  
+};
 
-function miConvertStringToPoint(pointString) {
+MovingImages.ConvertStringToPoint = function(pointString) {
   var charactersToRemove = NSCharacterSet.characterSetWithCharactersInString('{} ');
   var strippedString = pointString.stringByTrimmingCharactersInSet(charactersToRemove);
   var commaSet = NSCharacterSet.characterSetWithCharactersInString(',');
@@ -77,18 +127,19 @@ function miConvertStringToPoint(pointString) {
     x: x,
     y: y
   };
-}
+};
 
-function miConvertPointsToLine(pointsArray) {
+MovingImages.ConvertPointsToLine = function(pointsArray) {
   // MSGradientPointArray
   var thePoints = pointsArray.points();
-  var startPoint = miConvertStringToPoint(thePoints[0]);
-  var endPoint = miConvertStringToPoint(thePoints[1]);
+  var startPoint = MovingImages.ConvertStringToPoint(thePoints[0]);
+  var endPoint = MovingImages.ConvertStringToPoint(thePoints[1]);
   return {
     startpoint: startPoint,
     endpoint: endPoint
   };
-}
+};
+*/
 
 /*
 {
