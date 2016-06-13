@@ -103,45 +103,6 @@ var MovingImages = {};
 })();
 
 /*
-MovingImages.ConvertMSRect = function(msRect) {
-  return {
-    size: {
-      width: msRect.width(),
-      height: msRect.height()
-    },
-    origin: {
-      x: msRect.x(),
-      y: msRect.y()
-    }
-  };  
-};
-
-MovingImages.ConvertStringToPoint = function(pointString) {
-  var charactersToRemove = NSCharacterSet.characterSetWithCharactersInString('{} ');
-  var strippedString = pointString.stringByTrimmingCharactersInSet(charactersToRemove);
-  var commaSet = NSCharacterSet.characterSetWithCharactersInString(',');
-  var components = strippedString.componentsSeparatedByCharactersInSet(commaSet);
-  var x = components[0].doubleValue();
-  var y = components[1].doubleValue();
-  return {
-    x: x,
-    y: y
-  };
-};
-
-MovingImages.ConvertPointsToLine = function(pointsArray) {
-  // MSGradientPointArray
-  var thePoints = pointsArray.points();
-  var startPoint = MovingImages.ConvertStringToPoint(thePoints[0]);
-  var endPoint = MovingImages.ConvertStringToPoint(thePoints[1]);
-  return {
-    startpoint: startPoint,
-    endpoint: endPoint
-  };
-};
-*/
-
-/*
 {
     "<class>" = MSShapeGroup;
     clippingMaskMode = 0;
