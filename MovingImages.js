@@ -18,12 +18,14 @@ function redComponent(hexString) {
   return (number1 + number2) / 255.0
 }
 
+// Assumes string is not prefixed with a #
 function greenComponent(hexString) {
   var number1 = hexDigitToNumber(hexString[2]) * 16.0
   var number2 = hexDigitToNumber(hexString[3])
   return (number1 + number2) / 255.0
 }
 
+// Assumes string is not prefixed with a #
 function blueComponent(hexString) {
   var number1 = hexDigitToNumber(hexString[4]) * 16.0;
   var number2 = hexDigitToNumber(hexString[5]);
@@ -89,56 +91,6 @@ function miConvertPointsToLine(pointsArray) {
 }
 
 /*
-@import 'MovingImages.sketchplugin';
-
-miLog('This is the mi log text');
-
-log(context);
-
-var documentName = context.document.displayName();
-log('The current document is named: ' + documentName);
-
-var selectedLayers = context.selection;
-var selectedCount = selectedLayers.count();
-
-if (selectedCount == 0) {
-  log('No layers are selected.');
-} else {
-  log('Selected layers:');
-  for (var i = 0; i < selectedCount; i++) {
-    var layer = selectedLayers[i];
-    log((i+1) + '. ' + layer.class());
-    if (layer.class() == 'MSShapeGroup') {
-      var frame = layer.frame()
-      miLog('Frame origin.x: ' + frame.x() + ' .y: ' + frame.y())
-      miLog(miConvertMSRect(frame))
-      // miLog(layer.layers())
-      miLog(layer.treeAsDictionary())
-      // var subLayers = layer.layers()
-      // var subLayersCount = subLayers.count()
-      // miLog(subLayers)
-      // miLog('Num subLayers: ' + subLayersCount)
-      // miLog(subLayers.treeAsDictionary())
-      // subLayer = subLayers[0]
-      // miLog(subLayer)
-      // miLog(subLayer.class())
-//      for (var j = 0; j < subLayersCount; ++j) {
-//        miLog('i: ' + i 'j: ' + j + subLayers[j].class())
-//      }
-    }
-    miLog('I am here')
-    fill = layer.style().fills().objectAtIndex(0);
-    miLog(fill.color())
-    // fill.color = MSColor.colorWithSVGString("#d00");
-    miLog(miConvertMSColor(fill.color()))
-    var newColor = fill.color().colorWithAlpha(0.5);
-    miLog(miConvertMSColor(newColor))
-    miLog(newColor);
-    miLog(newColor.hexValue());
-    miLog(newColor.alpha());
-  }
-};
-
 {
     "<class>" = MSShapeGroup;
     clippingMaskMode = 0;
