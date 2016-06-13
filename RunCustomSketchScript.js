@@ -25,16 +25,12 @@ if (selectedCount == 0) {
       var rect = frame.rect()
       
       var bezier = layer.bezierPathInRect(rect) // This returns an NSBezierPath
-      // var rect = [[layer frame] rect];
-      // var bezier = [layer bezierPathInRect:rect];
       var svgPath = bezier.svgPathAttribute()
       log(svgPath)
 
       log(layer.immutableModelObject().svgPathAttribute(exporter))
       log('Frame origin.x: ' + frame.x() + ' .y: ' + frame.y())
-      // log(miConvertMSRect(frame))
       var borders = layer.style().borders()
-      // log(borders.objectAtIndex(0).treeAsDictionary())
       var gradient = borders.objectAtIndex(0).gradient()
       log(gradient.treeAsDictionary())
       var gradientPoints = gradient.points()
@@ -44,20 +40,6 @@ if (selectedCount == 0) {
       log(miConvertStringToPoint(point0))
       log(point0.class())
       log(miConvertPointsToLine(gradientPoints))
-      // log(borders.treeAsDictionary())
-      // log(layer.layers())
-      // log(layer.treeAsDictionary())
-      // var subLayers = layer.layers()
-      // var subLayersCount = subLayers.count()
-      // log(subLayers)
-      // log('Num subLayers: ' + subLayersCount)
-      // log(subLayers.treeAsDictionary())
-      // subLayer = subLayers[0]
-      // log(subLayer)
-      // log(subLayer.class())
-//      for (var j = 0; j < subLayersCount; ++j) {
-//        log('i: ' + i 'j: ' + j + subLayers[j].class())
-//      }
     }
     log('I am here')
     fill = layer.style().fills().objectAtIndex(0);
