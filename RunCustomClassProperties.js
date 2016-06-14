@@ -8,19 +8,37 @@ var selectedCount = selectedShapeGroups.count();
 if (selectedCount == 0) {
   log('No layers are selected.');
 } else {
-  log('Selected shape groups:');
+  log('Selected shape groups: ' + selectedCount);
   for (var i = 0; i < selectedCount; i++) {
     var shapeGroup = selectedShapeGroups[i];
     var propertiesString = MovingImages.getObjectProperties(shapeGroup);
-    log(propertiesString)
-    // log(layer.treeAsDictionary())
+    log(propertiesString);
+    // log(layer.treeAsDictionary();
     var theLayers = shapeGroup.layers();
-    for (layer in theLayers) {
-      var propertiesString = MovingImages.getObjectProperties(shapeGroup);
-      log(propertiesString)
+    propertiesString = MovingImages.getObjectProperties(theLayers);
+    log(propertiesString)
+    var theCount = theLayers.count()
+    log("Number of layers: " + theCount)
+    for (var j = 0; j < theCount; ++j) {
+      let theObject = theLayers.objectAtIndex(j)
+      let classString = String(theObject.class())
+      switch(classString){
+        case "MSRectangleShape":
+          log("Rectangle shape");
+          log(MovingImages.getRectangleProperties(theObject))
+          break;
+        case "MSPolygonShape":
+          log("Polygon shape");
+          log(MovingImages.getPolygonProperties(theObject))
+          break;
+        default:
+          log("Unknown shape");
+          log(MovingImages.getObjectProperties(theObject));
+      }
     }
   }
-};
+}
+
 
 /*
 theObject class: MSShapeGroup typeof: object

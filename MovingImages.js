@@ -121,6 +121,15 @@ var MovingImages = {};
     result += rectangleObject.bezierPath().svgPathAttribute();
     return result;
   }
+
+  MovingImages.getPolygonProperties = function(polygonObject) {
+    if (String(polygonObject.class()) !== "MSPolygonShape") {
+      return "Not a MSPolygonShape"
+    }
+    var result = "Polygon name: " + polygonObject.name() + "; numpoints: " + polygonObject.numberOfPoints() + "\n";
+    result += polygonObject.bezierPath().svgPathAttribute();
+    return result;
+  }
 })();
 
 /*
