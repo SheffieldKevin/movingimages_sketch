@@ -100,6 +100,27 @@ var MovingImages = {};
   };
   var convertPointsToLine = MovingImages.convertPointsToLine;
 
+  MovingImages.getObjectProperties = function(theObject) {
+    var name = "(without name)"
+    if (theObject.name) {
+      name = theObject.name()
+    }
+    var result = "object class: " + theObject.class() + " name: " + name;
+    return result;
+  }
+  var getObjectProperties = MovingImages.getObjectProperties;
+  
+  MovingImages.getRectangleProperties = function(rectangleObject) {
+    if (String(rectangleObject.class()) !== "MSRectangleShape") {
+      return "Not a MSRectangleShape"
+    }
+    var result = "Rectangle name: " + rectangleObject.name() + "; fixedRadius: " + rectangleObject.fixedRadius();
+    var theFrame = rectangleObject.frame()
+    result += "; width: " + theFrame.width() + "; height: " + theFrame.height();
+    result += "; x: " + theFrame.x() + "; y: " + theFrame.y() + "\n";
+    result += rectangleObject.bezierPath().svgPathAttribute();
+    return result;
+  }
 })();
 
 /*
