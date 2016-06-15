@@ -130,6 +130,34 @@ var MovingImages = {};
     result += polygonObject.bezierPath().svgPathAttribute();
     return result;
   }
+
+  MovingImages.MSBlendModeToMIBlendMode = function(blendMode) {
+    var result = "kCGBlendModeNormal";
+    var blendModes = [
+      "kCGBlendModeNormal",     //  0
+      "kCGBlendModeDarken",     //  1
+      "kCGBlendModeMultiply",   //  2
+      "kCGBlendModeColorBurn",  //  3
+      "kCGBlendModeLighten",    //  4
+      "kCGBlendModeScreen",     //  5
+      "kCGBlendModeColorDodge", //  6
+      "kCGBlendModeOverlay",    //  7
+      "kCGBlendModeSoftLight",  //  8
+      "kCGBlendModeHardLight",  //  9
+      "kCGBlendModeDifference", // 10
+      "kCGBlendModeExclusion",  // 11
+      "kCGBlendModeHue",        // 12
+      "kCGBlendModeSaturation", // 13
+      "kCGBlendModeColor",      // 14
+      "kCGBlendModeLuminosity" // 15
+    ];
+    var numModes = blendModes.length;
+    if (blendMode >= 0 && blendMode < numModes) {
+      result = blendModes[blendMode];
+    }
+    return result;
+  }
+  
 })();
 
 /*
