@@ -19,9 +19,9 @@ if (selectedCount == 0) {
     log(propertiesString)
     var theCount = theLayers.count()
     log("Number of layers: " + theCount)
-    for (var j = 0; j < theCount; ++j) {
-      let theObject = theLayers.objectAtIndex(j)
-      let classString = String(theObject.class())
+    for (var j = 0; j < theCount; j++) {
+      var theObject = theLayers.objectAtIndex(j)
+      var classString = String(theObject.class())
       switch(classString){
         case "MSRectangleShape":
           log("Rectangle shape");
@@ -38,7 +38,6 @@ if (selectedCount == 0) {
     }
   }
 }
-
 
 /*
 theObject class: MSShapeGroup typeof: object
