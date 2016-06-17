@@ -1,7 +1,5 @@
 @import '~/github/movingimages_sketch/MovingImages.js';
 
-// log(context);
-
 var selectedShapeGroups = context.selection;
 var selectedCount = selectedShapeGroups.count();
 
@@ -18,6 +16,10 @@ if (selectedCount == 0) {
     log(layer.bezierPath());
     var cgRect = CGRectMake(frame.x() - bWidth, frame.y() - bWidth, frame.width() + 2.0 * bWidth, frame.height() + 2.0 * bWidth);
     log(cgRect);
+    log("isPolygon: " + layer.path().isPolygon());
+    log("isLine: " + layer.path().isLine());
+    log("isRectangle: " + layer.path().isRectangle());
+
     var bezierPath = layer.path().bezierPathInRect(cgRect);
     log(bezierPath.svgPathAttribute());
     log(layer.bezierPath().svgPathAttribute());
