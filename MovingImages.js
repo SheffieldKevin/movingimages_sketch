@@ -107,7 +107,7 @@ var MovingImages = {};
     }
     var result = "object class: " + theObject.class() + " name: " + name;
     return result;
-  }
+  };
   var getObjectProperties = MovingImages.getObjectProperties;
   
   MovingImages.getRectangleProperties = function(rectangleObject) {
@@ -120,7 +120,7 @@ var MovingImages = {};
     result += "; x: " + theFrame.x() + "; y: " + theFrame.y() + "\n";
     result += rectangleObject.bezierPath().svgPathAttribute();
     return result;
-  }
+  };
 
   MovingImages.getPolygonProperties = function(polygonObject) {
     if (String(polygonObject.class()) !== "MSPolygonShape") {
@@ -129,7 +129,7 @@ var MovingImages = {};
     var result = "Polygon name: " + polygonObject.name() + "; numpoints: " + polygonObject.numberOfPoints() + "\n";
     result += polygonObject.bezierPath().svgPathAttribute();
     return result;
-  }
+  };
 
   MovingImages.MSBlendModeToMIBlendMode = function(blendMode) {
     var result = "kCGBlendModeNormal";
@@ -157,7 +157,44 @@ var MovingImages = {};
     }
     return result;
   }
+  var MSBlendModeToMIBlendMode = MovingImages.MSBlendModeToMIBlendMode;
   
+  MovingImages.makeJSONFillRect = function(layer, fill) {
+    var frame = layer.frame();
+    var fillRect = {
+      rect: {
+        origin: { x: frame.x(), y: frame.y() },
+        size: { width: frame.width(), height: frame.height() }
+      },
+      elementtype: "fillrectangle"
+    };
+    // log(fillRect);
+    var fixedRadius = layer.fixedRadius();
+    fixedRadius = Math.min(fixedRadius, frame.width() * 0.5, frame.height() * 0.5);
+    if (fixedRadius > 0.00001) {
+      fillRect.radius = fixedRadius;
+    }
+    fillRect.fillcolor = convertMSColor(fill.color());
+    fillRect.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
+    fillRect.opacity = fill.contextSettingsGeneric().opacity();
+    return fillRect
+  }
+  var makeJSONFillRect = MovingImages.makeJSONFillRect;
+  
+  MovingImages.makeJSONDrawElement = function(layer, fill) {
+    var elementType = "fillpath";
+    
+    if (layer.path().isRectangle()) {
+      elementType = "fillrectangle";
+    }
+    else if (layer.class() == "filloval") {
+      elementType = "filloval";
+    }
+    var fillType = fill.fillType();
+    if (fillType === 0 && elementType === "fillrectangle") {
+      return makeJSONFillRect(layer, fill)
+    }
+  };
 })();
 
 /*

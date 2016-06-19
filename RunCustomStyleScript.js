@@ -28,10 +28,13 @@ if (selectedCount == 0) {
     var fills = style.fills();
     var countFills = fills.count();
     log(countFills);
+/*
     for (var j = 0; j < countFills; ++j) {
       var fill = fills.objectAtIndex(j);
       // log(fill.treeAsDictionary());
     }
+*/
+    log(MovingImages.makeJSONDrawElement(layer, fills.objectAtIndex(0)));
     // var borders = style.borders();
     // var countBorders = borders.count();
     // log(countBorders);
