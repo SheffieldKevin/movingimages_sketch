@@ -55,11 +55,22 @@ var MovingImages = {};
       return convertAlphaColor(msColor);
     }
     else {
-      return msColor.hexValue();
+      return String(msColor.hexValue());
     }
   };
   var convertMSColor = MovingImages.convertMSColor;
 
+/*
+  MovingImages.convertMSColors = function(msColors) {
+    var numColors = msColors.count();
+    var colors = [];
+    for (var i = 0 ; i < numColors ; ++i) {
+      colors.push(convertMSColor(msColors.objectAtIndex(i)));
+    }
+    return colors;
+  }
+  var convertMSColors = MovingImages.convertMSColors;
+*/
   MovingImages.convertMSRect = function(msRect) {
     return {
       size: {
@@ -87,7 +98,7 @@ var MovingImages = {};
     };
   };
   var convertStringToPoint = MovingImages.convertStringToPoint;
-  
+
   MovingImages.convertPointsToLine = function(pointsArray) {
     // MSGradientPointArray
     var thePoints = pointsArray.points();
@@ -180,8 +191,38 @@ var MovingImages = {};
     return fillRect;
   };
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
-  
-  MovingImages.makeJSONFillElement = function(layer, fill) {
+
+  MovingImages.makeJSONFillShape = function(layer, fill) {
+    // TODO: Will need to deal with fillType here.
+    var fillType = fill.fillType();
+    switch(fillType) {
+      case 0:
+        return {
+          elementtype: "fillpath",
+          svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
+          fillcolor: convertMSColor(fill.color()),
+          blendmode: MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode()),
+          opacity: fill.contextSettingsGeneric().opacity()
+        };
+      case 1:
+        var gradient = fill.gradient();
+        var stops = gradient.stops();
+        log(stops);
+        
+        return {
+          elementtype: "lineargradientfill",
+          svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
+          blendmode: MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode()),
+          opacity: fill.contextSettingsGeneric().opacity(),
+          line: convertPointsToLine(gradient.points())
+          // arrayofcolors: convertMSColors(gradient.colors())
+          
+        };
+    }
+  };
+  var makeJSONFillShape = MovingImages.makeJSONFillShape;
+
+  MovingImages.processFillLayer = function(layer, fill) {
     var elementType = "fillpath";
     
     if (layer.path().isRectangle()) {
@@ -194,12 +235,9 @@ var MovingImages = {};
     if (fillType === 0 && elementType === "fillrectangle") {
       return makeJSONFillRect(layer, fill);
     }
-  };
-  
-  MovingImages.processFillLayer = function(layer, fill) {
-    return {
-      elementtype: "filllayer"
-    };
+    else {
+      return makeJSONFillShape(layer, fill);
+    }
   };
   var processFillLayer = MovingImages.processFillLayer;
   
