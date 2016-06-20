@@ -9,26 +9,27 @@ if (selectedCount == 0) {
   log('Selected shape groups: ' + selectedCount);
   for (var i = 0; i < selectedCount; i++) {
     var shapeGroup = selectedShapeGroups[i];
+    log(JSON.stringify(MovingImages.processItemInSelection(shapeGroup)), null, 2);
     var layer = shapeGroup.layers().objectAtIndex(0);
-    log(layer.treeAsDictionary())
+    // log(layer.treeAsDictionary())
     var frame = layer.frame();
     var bWidth = 4;
     log(layer.bezierPath());
     var cgRect = CGRectMake(frame.x() - bWidth, frame.y() - bWidth, frame.width() + 2.0 * bWidth, frame.height() + 2.0 * bWidth);
     log(cgRect);
-    log("isPolygon: " + layer.path().isPolygon());
-    log("isLine: " + layer.path().isLine());
-    log("isRectangle: " + layer.path().isRectangle());
-
-    var bezierPath = layer.path().bezierPathInRect(cgRect);
-    log(bezierPath.svgPathAttribute());
-    log(layer.bezierPath().svgPathAttribute());
     var style = shapeGroup.style();
     // log(MovingImages.MSBlendModeToMIBlendMode(style.contextSettings().blendMode()))
     var fills = style.fills();
+/*
+    log("isPolygon: " + layer.path().isPolygon());
+    log("isLine: " + layer.path().isLine());
+    log("isRectangle: " + layer.path().isRectangle());
+    var bezierPath = layer.path().bezierPathInRect(cgRect);
+    log(bezierPath.svgPathAttribute());
+    log(layer.bezierPath().svgPathAttribute());
     var countFills = fills.count();
     log(countFills);
-/*
+
     for (var j = 0; j < countFills; ++j) {
       var fill = fills.objectAtIndex(j);
       // log(fill.treeAsDictionary());

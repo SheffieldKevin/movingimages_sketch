@@ -5,27 +5,27 @@ var MovingImages = {};
 
 (function() {
   MovingImages.hexDigitNumber = function(digit) {
-    var hexDigitTable = '0123456789ABCDEF'
+    var hexDigitTable = '0123456789ABCDEF';
     for (i = 0 ; i < 16 ; ++i) {
       if (hexDigitTable[i] == digit) {
-        return i
+        return i;
       }
     }
-    return 0
+    return 0;
   };
   var hexDigitToNumber = MovingImages.hexDigitNumber;
   
   MovingImages.redComponent = function(hexString) {
-    var number1 = hexDigitToNumber(hexString[0]) * 16.0
-    var number2 = hexDigitToNumber(hexString[1])
-    return (number1 + number2) / 255.0
+    var number1 = hexDigitToNumber(hexString[0]) * 16.0;
+    var number2 = hexDigitToNumber(hexString[1]);
+    return (number1 + number2) / 255.0;
   };
   var redComponent = MovingImages.redComponent;
 
   MovingImages.greenComponent = function(hexString) {
-    var number1 = hexDigitToNumber(hexString[2]) * 16.0
-    var number2 = hexDigitToNumber(hexString[3])
-    return (number1 + number2) / 255.0
+    var number1 = hexDigitToNumber(hexString[2]) * 16.0;
+    var number2 = hexDigitToNumber(hexString[3]);
+    return (number1 + number2) / 255.0;
   };
   var greenComponent = MovingImages.greenComponent;
 
@@ -38,7 +38,7 @@ var MovingImages = {};
   var blueComponent = MovingImages.blueComponent;
 
   MovingImages.convertAlphaColor = function(msColor) {
-    var hexString = String(msColor.hexValue())
+    var hexString = String(msColor.hexValue());
     var dictionary = {
       red: redComponent(hexString),
       green: greenComponent(hexString),
@@ -58,7 +58,7 @@ var MovingImages = {};
       return msColor.hexValue();
     }
   };
-  var convertMSColor = MovingImages.convertMSColor
+  var convertMSColor = MovingImages.convertMSColor;
 
   MovingImages.convertMSRect = function(msRect) {
     return {
@@ -101,9 +101,9 @@ var MovingImages = {};
   var convertPointsToLine = MovingImages.convertPointsToLine;
 
   MovingImages.getObjectProperties = function(theObject) {
-    var name = "(without name)"
+    var name = "(without name)";
     if (theObject.name) {
-      name = theObject.name()
+      name = theObject.name();
     }
     var result = "object class: " + theObject.class() + " name: " + name;
     return result;
@@ -112,10 +112,10 @@ var MovingImages = {};
   
   MovingImages.getRectangleProperties = function(rectangleObject) {
     if (String(rectangleObject.class()) !== "MSRectangleShape") {
-      return "Not a MSRectangleShape"
+      return "Not a MSRectangleShape";
     }
     var result = "Rectangle name: " + rectangleObject.name() + "; fixedRadius: " + rectangleObject.fixedRadius();
-    var theFrame = rectangleObject.frame()
+    var theFrame = rectangleObject.frame();
     result += "; width: " + theFrame.width() + "; height: " + theFrame.height();
     result += "; x: " + theFrame.x() + "; y: " + theFrame.y() + "\n";
     result += rectangleObject.bezierPath().svgPathAttribute();
@@ -124,7 +124,7 @@ var MovingImages = {};
 
   MovingImages.getPolygonProperties = function(polygonObject) {
     if (String(polygonObject.class()) !== "MSPolygonShape") {
-      return "Not a MSPolygonShape"
+      return "Not a MSPolygonShape";
     }
     var result = "Polygon name: " + polygonObject.name() + "; numpoints: " + polygonObject.numberOfPoints() + "\n";
     result += polygonObject.bezierPath().svgPathAttribute();
@@ -156,7 +156,7 @@ var MovingImages = {};
       result = blendModes[blendMode];
     }
     return result;
-  }
+  };
   var MSBlendModeToMIBlendMode = MovingImages.MSBlendModeToMIBlendMode;
   
   MovingImages.makeJSONFillRect = function(layer, fill) {
@@ -177,11 +177,11 @@ var MovingImages = {};
     fillRect.fillcolor = convertMSColor(fill.color());
     fillRect.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
     fillRect.opacity = fill.contextSettingsGeneric().opacity();
-    return fillRect
-  }
+    return fillRect;
+  };
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
   
-  MovingImages.makeJSONDrawElement = function(layer, fill) {
+  MovingImages.makeJSONFillElement = function(layer, fill) {
     var elementType = "fillpath";
     
     if (layer.path().isRectangle()) {
@@ -192,8 +192,97 @@ var MovingImages = {};
     }
     var fillType = fill.fillType();
     if (fillType === 0 && elementType === "fillrectangle") {
-      return makeJSONFillRect(layer, fill)
+      return makeJSONFillRect(layer, fill);
     }
+  };
+  
+  MovingImages.processFillLayer = function(layer, fill) {
+    return {
+      elementtype: "filllayer"
+    };
+  };
+  var processFillLayer = MovingImages.processFillLayer;
+  
+  MovingImages.processBorderLayer = function(layer, border) {
+    return {
+      elementtype: "strokelayer"
+    };
+  };
+  var processBorderLayer = MovingImages.processBorderLayer;
+  
+  MovingImages.processShapeGroup = function(shapeGroup) {
+    var layers = shapeGroup.layers();
+    var numLayers = layers.count();
+    var fills = shapeGroup.style().fills();
+    var numFills = fills.count();
+    var borders = shapeGroup.style().borders();
+    var numBorders = borders.count();
+    
+    var elements = [];
+    
+    for (var i = 0; i < numLayers; ++i) {
+      for (var j = 0; j < numFills; ++j) {
+        elements.push(processFillLayer(layers.objectAtIndex(i), fills.objectAtIndex(j)));
+      }
+    }
+    
+    for (i = 0; i < numLayers; ++i) {
+      for (j = 0; j < numBorders; ++j) {
+        elements.push(processBorderLayer(layers.objectAtIndex(i), borders.objectAtIndex(j)));
+      }
+    }
+    return {
+      elementtype: "arrayofelements",
+      arrayofelements: elements
+    };
+  };
+  var processShapeGroup = MovingImages.processShapeGroup;
+  
+  MovingImages.processLayerGroup = function(layerGroup) {
+    var layers = layerGroup.layers();
+    var numLayers = layers.count();
+    var elements = [];
+    for (var i = 0; i < numLayers; ++i) {
+      var layer = layers.objectAtIndex(i);
+      var layerClass = String(layer.class());
+      switch (layerClass) {
+        case "MSLayerGroup":
+          elements.push(processLayerGroup(layer));
+          break;
+        case "MSShapeGroup":
+          elements.push(processShapeGroup(layer));
+          break;
+        default:
+          log(layer.treeAsDictionary());
+          break;
+      }
+    }
+    return {
+      elementtype: "arrayofelements",
+      arrayofelements: elements
+    };
+  };
+  var processLayerGroup = MovingImages.processLayerGroup;
+  
+  MovingImages.processItemInSelection = function(item) {
+    var itemClass = String(item.class());
+    var movingImages = {};
+    switch (itemClass) {
+      case "MSLayerGroup":
+        movingImages = processLayerGroup(item);
+        break;
+      case "MSShapeGroup":
+        movingImages = processShapeGroup(item);
+        break;
+      default:
+        return movingImages = null;
+    }
+    if (movingImages === null) {
+      return { elementtype: "arrayofelements" };
+    }
+    var frame = item.frame();
+    movingImages.viewBox = convertMSRect(frame);
+    return movingImages;
   };
 })();
 
