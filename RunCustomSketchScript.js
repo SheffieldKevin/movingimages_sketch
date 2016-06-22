@@ -13,6 +13,7 @@ if (selectedCount == 0) {
   for (var i = 0; i < selectedCount; i++) {
     var layer = selectedLayers[i];
     log((i+1) + '. ' + layer.class());
+    log(JSON.stringify(MovingImages.processItemInSelection(layer), null, 2));
     if (layer.class() == 'MSShapeGroup') {
       // log(layer.treeAsDictionary())
       var frame = layer.frame()
@@ -21,20 +22,15 @@ if (selectedCount == 0) {
       
       var bezier = layer.bezierPathInRect(rect) // This returns an NSBezierPath
       var svgPath = bezier.svgPathAttribute()
-      log(svgPath)
+      // log(svgPath)
 
-      log(layer.immutableModelObject().svgPathAttribute(exporter))
-      log('Frame origin.x: ' + frame.x() + ' .y: ' + frame.y())
-      var borders = layer.style().borders()
-      var gradient = borders.objectAtIndex(0).gradient()
-      log(gradient.treeAsDictionary())
-      var gradientPoints = gradient.points()
-      log(gradientPoints.class())
-      var point0 = gradientPoints.points().objectAtIndex(0)
-      log(point0)
-      log(MovingImages.convertStringToPoint(point0))
-      log(point0.class())
-      log(MovingImages.convertPointsToLine(gradientPoints))
+      // log(layer.immutableModelObject().svgPathAttribute(exporter))
+      // log('Frame origin.x: ' + frame.x() + ' .y: ' + frame.y())
+      var fills = layer.style().fills()
+      var gradient = fills.objectAtIndex(0).gradient();
+      log(gradient.stops().objectAtIndex(0).color());
+      log(gradient.stops().objectAtIndex(0).position());
+      // log(gradient.treeAsDictionary())
     }
     log('I am here')
     fill = layer.style().fills().objectAtIndex(0);

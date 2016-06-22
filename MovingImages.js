@@ -55,7 +55,7 @@ var MovingImages = {};
       return convertAlphaColor(msColor);
     }
     else {
-      return String(msColor.hexValue());
+      return "#" + String(msColor.hexValue());
     }
   };
   var convertMSColor = MovingImages.convertMSColor;
@@ -85,6 +85,58 @@ var MovingImages = {};
   };
   var convertMSRect = MovingImages.convertMSRect;
   
+  MovingImages.convertNormalizedCGPointInFrame = function(cgPoint, frame) {
+    return {
+      x: frame.x() + cgPoint.x * frame.width(),
+      y: frame.y() + cgPoint.y * frame.height()
+    };
+  };
+  var convertNormalizedCGPointInFrame = MovingImages.convertNormalizedCGPointInFrame;
+  
+  MovingImages.convertCGRect = function(cgRect) {
+    var origin = cgRect.origin;
+    var size = cgRect.size;
+    return {
+      origin: {
+        x: cgRect.origin.x + 0.0,
+        y: cgRect.origin.y + 0.0
+      },
+      size: {
+        width: cgRect.size.width + 0.0,
+        height: cgRect.size.height + 0.0
+      }
+    };
+  };
+  var convertCGRect = MovingImages.convertCGRect;
+
+  MovingImages.makeLinearGradientLine = function(gradient, frame) {
+    return {
+      startpoint: convertNormalizedCGPointInFrame(gradient.from(), frame),
+      endpoint: convertNormalizedCGPointInFrame(gradient.to(), frame)
+    };
+  };
+  var makeLinearGradientLine = MovingImages.makeLinearGradientLine;
+  
+  MovingImages.colorsFromGradientStops = function(stops) {
+    var numColors = stops.count();
+    var colors = [];
+    for (i = 0 ; i < numColors ; ++i) {
+      colors.push(convertMSColor(stops.objectAtIndex(i).color()));
+    }
+    return colors;
+  };
+  var colorsFromGradientStops = MovingImages.colorsFromGradientStops;
+
+  MovingImages.positionsFromGradientStops = function(stops) {
+    var numPositions = stops.count();
+    var positions = [];
+    for (i = 0 ; i < numPositions ; ++i) {
+      positions.push(stops.objectAtIndex(i).position());
+    }
+    return positions;
+  };
+  var positionsFromGradientStops = MovingImages.positionsFromGradientStops;
+/*
   MovingImages.convertStringToPoint = function(pointString) {
     var charactersToRemove = NSCharacterSet.characterSetWithCharactersInString('{} ');
     var strippedString = pointString.stringByTrimmingCharactersInSet(charactersToRemove);
@@ -110,7 +162,7 @@ var MovingImages = {};
     };
   };
   var convertPointsToLine = MovingImages.convertPointsToLine;
-
+*/
   MovingImages.getObjectProperties = function(theObject) {
     var name = "(without name)";
     if (theObject.name) {
@@ -172,11 +224,11 @@ var MovingImages = {};
   
   MovingImages.makeJSONFillRect = function(layer, fill) {
     var frame = layer.frame();
+    log("makeJSONFillRect");
+    log(frame.treeAsDictionary());
+    log(layer.bounds().treeAsDictionary());
     var fillRect = {
-      rect: {
-        origin: { x: frame.x(), y: frame.y() },
-        size: { width: frame.width(), height: frame.height() }
-      },
+      rect: convertMSRect(frame),
       elementtype: "fillrectangle"
     };
     // log(fillRect);
@@ -193,8 +245,12 @@ var MovingImages = {};
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
 
   MovingImages.makeJSONFillShape = function(layer, fill) {
+    log("makeJSONFillShape");
+    // log(layer.frame().treeAsDictionary());
+    // log(layer.bounds().treeAsDictionary());
     // TODO: Will need to deal with fillType here.
     var fillType = fill.fillType();
+    
     switch(fillType) {
       case 0:
         return {
@@ -206,6 +262,7 @@ var MovingImages = {};
         };
       case 1:
         var gradient = fill.gradient();
+        var frame = layer.frame();
         var stops = gradient.stops();
         log(stops);
         
@@ -214,9 +271,13 @@ var MovingImages = {};
           svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
           blendmode: MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode()),
           opacity: fill.contextSettingsGeneric().opacity(),
-          line: convertPointsToLine(gradient.points())
-          // arrayofcolors: convertMSColors(gradient.colors())
-          
+          line: makeLinearGradientLine(gradient, frame),
+          arrayofcolors: colorsFromGradientStops(stops),
+          arrayoflocations: positionsFromGradientStops(stops)
+        };
+      default:
+        return {
+          elementtype: "layerfillshape"
         };
     }
   };
@@ -228,7 +289,7 @@ var MovingImages = {};
     if (layer.path().isRectangle()) {
       elementType = "fillrectangle";
     }
-    else if (layer.class() == "filloval") {
+    else if (String(layer.class()) === "MSOvalShape") {
       elementType = "filloval";
     }
     var fillType = fill.fillType();
@@ -241,10 +302,90 @@ var MovingImages = {};
   };
   var processFillLayer = MovingImages.processFillLayer;
   
-  MovingImages.processBorderLayer = function(layer, border) {
-    return {
-      elementtype: "strokelayer"
+  MovingImages.makeJSONOvalOrRectBorder = function(layer, border, borderOptions) {
+    // For now assume only non zero fill types.
+    // Assume border is centred on outline.
+    var frame = layer.frame();
+    log("makeJSONOvalOrRectBorder");
+    // log(frame.treeAsDictionary());
+    // log(layer.bounds().treeAsDictionary());
+    var rectangle = convertMSRect(frame);
+    var lineWidth = border.thickness();
+    var position = border.position();
+    var fixedRadius = layer.fixedRadius();
+    
+    if (position == 2) {
+      rectangle.origin.x -= 0.5 * lineWidth;
+      rectangle.origin.y -= 0.5 * lineWidth;
+      rectangle.size.width += lineWidth;
+      rectangle.size.height += lineWidth;
+      if (fixedRadius > 0.0001) {
+        fixedRadius += 0.5 * lineWidth;
+      }
+    }
+    else if (position == 1) {
+      rectangle.origin.x += 0.5 * lineWidth;
+      rectangle.origin.y += 0.5 * lineWidth;
+      rectangle.size.width -= lineWidth;
+      rectangle.size.height -= lineWidth;
+      if (fixedRadius > 0.5 * lineWidth) {
+        fixedRadius -= 0.5 * lineWidth;
+      }
+    }
+    var borderRect = {
+      rect: rectangle,
+      elementtype: "strokerectangle",
+      linewidth: lineWidth
     };
+    // log(fillRect);
+    fixedRadius = Math.min(fixedRadius, frame.width() * 0.5, frame.height() * 0.5);
+    if (fixedRadius > 0.00001) {
+      borderRect.radius = fixedRadius;
+      borderRect.elementtype = "strokeroundedrectangle";
+    }
+    borderRect.strokecolor = convertMSColor(border.color());
+    borderRect.blendmode = MSBlendModeToMIBlendMode(border.contextSettingsGeneric().blendMode());
+    borderRect.opacity = border.contextSettingsGeneric().opacity();
+    return borderRect;
+  };
+  var makeJSONOvalOrRectBorder = MovingImages.makeJSONOvalOrRectBorder;
+
+  MovingImages.makeJSONBorderShape = function(layer, border, borderOptions) {
+    // For now assume only non zero fill types.
+    // Assume border is centred on outline.
+    log("makeJSONBorderShape");
+    // log(layer.frame().treeAsDictionary());
+    // log(layer.bounds().treeAsDictionary());
+    // TODO: Will need to deal with fillType here.
+
+    return {
+      elementtype: "strokepath",
+      svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
+      strokecolor: convertMSColor(border.color()),
+      blendmode: MSBlendModeToMIBlendMode(border.contextSettingsGeneric().blendMode()),
+      opacity: border.contextSettingsGeneric().opacity(),
+      linewidth: border.thickness()
+    };
+  };
+  var makeJSONBorderShape = MovingImages.makeJSONBorderShape;
+  
+  MovingImages.processBorderLayer = function(layer, border, borderOptions) {
+    var elementType = "strokepath";
+    
+    if (layer.path().isRectangle()) {
+      elementType = "strokerectangle";
+    }
+    else if (String(layer.class()) === "MSOvalShape") {
+      elementType = "strokeoval"
+    }
+    
+    var fillType = border.fillType();
+    if (fillType === 0 && (elementType === "strokerectangle" || elementType === "strokeoval")) {
+      return makeJSONOvalOrRectBorder(layer, border, borderOptions);
+    }
+    else {
+      return makeJSONBorderShape(layer, border, borderOptions);
+    }
   };
   var processBorderLayer = MovingImages.processBorderLayer;
   
@@ -257,21 +398,40 @@ var MovingImages = {};
     var numBorders = borders.count();
     
     var elements = [];
+    var layer;
     
     for (var i = 0; i < numLayers; ++i) {
       for (var j = 0; j < numFills; ++j) {
-        elements.push(processFillLayer(layers.objectAtIndex(i), fills.objectAtIndex(j)));
+        var layer = layers.objectAtIndex(i);
+        var fill = fills.objectAtIndex(j);
+        if (fill.isEnabled()) {
+          elements.push(processFillLayer(layer, fill));
+        }
       }
     }
     
+    var borderOptions = shapeGroup.style().borderOptions();
     for (i = 0; i < numLayers; ++i) {
       for (j = 0; j < numBorders; ++j) {
-        elements.push(processBorderLayer(layers.objectAtIndex(i), borders.objectAtIndex(j)));
+        var layer = layers.objectAtIndex(i);
+        var border = borders.objectAtIndex(j);
+        if (border.isEnabled()) {
+          elements.push(processBorderLayer(layer, border, borderOptions));
+        }
       }
     }
     return {
       elementtype: "arrayofelements",
-      arrayofelements: elements
+      arrayofelements: elements,
+      contexttransformation: [
+        {
+          transformationtype: "translate",
+          translation: {
+            x: shapeGroup.frame().x(),
+            y: shapeGroup.frame().y()
+          }
+        }
+      ]
     };
   };
   var processShapeGroup = MovingImages.processShapeGroup;
@@ -305,12 +465,15 @@ var MovingImages = {};
   MovingImages.processItemInSelection = function(item) {
     var itemClass = String(item.class());
     var movingImages = {};
+    var groupBounds = {};
     switch (itemClass) {
       case "MSLayerGroup":
         movingImages = processLayerGroup(item);
+        groupBounds = item.frame();
         break;
       case "MSShapeGroup":
         movingImages = processShapeGroup(item);
+        groupBounds = item.groupBoundsForLayers();
         break;
       default:
         return movingImages = null;
@@ -318,8 +481,27 @@ var MovingImages = {};
     if (movingImages === null) {
       return { elementtype: "arrayofelements" };
     }
-    var frame = item.frame();
-    movingImages.viewBox = convertMSRect(frame);
+    // var frame = item.frame();
+    // log("In processItemInSelection");
+    // log(item.bounds());
+    // log(item.requiredRect())
+    movingImages.viewBox = convertCGRect(item.bounds());
+    movingImages.contexttransformation = [
+      {
+        transformationtype: "translate",
+        translation: {
+          x: 0,
+          y: "$height"
+        }
+      },
+      {
+        transformationtype: "scale",
+        scale: {
+          x: "$scale",
+          y: "-$scale"
+        }
+      }
+    ]
     return movingImages;
   };
 })();

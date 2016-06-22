@@ -9,7 +9,7 @@ if (selectedCount == 0) {
   log('Selected shape groups: ' + selectedCount);
   for (var i = 0; i < selectedCount; i++) {
     var shapeGroup = selectedShapeGroups[i];
-    log(JSON.stringify(MovingImages.processItemInSelection(shapeGroup)), null, 2);
+    log(JSON.stringify(MovingImages.processItemInSelection(shapeGroup), null, 2));
     var layer = shapeGroup.layers().objectAtIndex(0);
     // log(layer.treeAsDictionary())
     var frame = layer.frame();
@@ -35,7 +35,7 @@ if (selectedCount == 0) {
       // log(fill.treeAsDictionary());
     }
 */
-    log(MovingImages.makeJSONDrawElement(layer, fills.objectAtIndex(0)));
+    // log(MovingImages.makeJSONDrawElement(layer, fills.objectAtIndex(0)));
     // var borders = style.borders();
     // var countBorders = borders.count();
     // log(countBorders);
