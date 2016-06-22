@@ -224,18 +224,15 @@ var MovingImages = {};
   
   MovingImages.makeJSONFillRect = function(layer, fill) {
     var frame = layer.frame();
-    log("makeJSONFillRect");
-    log(frame.treeAsDictionary());
-    log(layer.bounds().treeAsDictionary());
     var fillRect = {
       rect: convertMSRect(frame),
       elementtype: "fillrectangle"
     };
-    // log(fillRect);
     var fixedRadius = layer.fixedRadius();
     fixedRadius = Math.min(fixedRadius, frame.width() * 0.5, frame.height() * 0.5);
     if (fixedRadius > 0.00001) {
       fillRect.radius = fixedRadius;
+      fillRect.elementtype =  "fillroundedrectangle";
     }
     fillRect.fillcolor = convertMSColor(fill.color());
     fillRect.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
@@ -245,9 +242,6 @@ var MovingImages = {};
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
 
   MovingImages.makeJSONFillShape = function(layer, fill) {
-    log("makeJSONFillShape");
-    // log(layer.frame().treeAsDictionary());
-    // log(layer.bounds().treeAsDictionary());
     // TODO: Will need to deal with fillType here.
     var fillType = fill.fillType();
     
@@ -477,27 +471,8 @@ var MovingImages = {};
   };
   var processLayerGroup = MovingImages.processLayerGroup;
   
-  MovingImages.processItemInSelection = function(item) {
-    var itemClass = String(item.class());
-    var movingImages = {};
-    var groupBounds = {};
-    switch (itemClass) {
-      case "MSLayerGroup":
-        movingImages = processLayerGroup(item);
-        groupBounds = item.frame();
-        break;
-      case "MSShapeGroup":
-        movingImages = processShapeGroup(item);
-        groupBounds = item.groupBoundsForLayers();
-        break;
-      default:
-        return movingImages = null;
-    }
-    if (movingImages === null) {
-      return { elementtype: "arrayofelements" };
-    }
-    movingImages.viewBox = convertCGRect(item.bounds());
-    movingImages.contexttransformation = [
+  function createDefaultTransform() {
+    return [
       {
         transformationtype: "translate",
         translation: {
@@ -512,7 +487,30 @@ var MovingImages = {};
           y: "-$scale"
         }
       }
-    ]
+    ];
+  }
+  
+  MovingImages.processItemInSelection = function(item) {
+    var itemClass = String(item.class());
+    var movingImages = {};
+    var groupBounds = {};
+    switch (itemClass) {
+      case "MSLayerGroup":
+        movingImages = processLayerGroup(item);
+        groupBounds = item.frame();
+        break;
+      case "MSShapeGroup":
+        movingImages = processShapeGroup(item);
+        groupBounds = convertCGRect(item.rect());
+        break;
+      default:
+        return movingImages = null;
+    }
+    if (movingImages === null) {
+      return { elementtype: "arrayofelements" };
+    }
+    movingImages.viewBox = convertCGRect(item.bounds());
+    movingImages.contexttransformation = createDefaultTransform()
     return movingImages;
   };
 })();
