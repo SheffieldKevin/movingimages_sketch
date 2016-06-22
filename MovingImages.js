@@ -302,43 +302,62 @@ var MovingImages = {};
   };
   var processFillLayer = MovingImages.processFillLayer;
   
+  // This takes a frame, and makes the rectangle wider and taller by amount
+  // while keeping rectangle centred. The value amount can be negative.
+  // @returns a JavaScript object.
+  MovingImages.insetRect = function(frame, amount) {
+    return {
+      origin: {
+        x: frame.x() - 0.5 * amount,
+        y: frame.y() - 0.5 * amount
+      },
+      size: {
+        width: frame.width() + amount,
+        height: frame.height() + amount
+      }
+    };
+  };
+  var insetRect = MovingImages.insetRect;
+  
+  MovingImages.adjustRadius = function(radius, position, lineWidth, rectangle) {
+    var fixedRadius = radius;
+    if (position === 2) {
+      if (fixedRadius > 0.0001 * lineWidth) {
+        fixedRadius += 0.5 * lineWidth;
+      }
+    }
+    else if (position === 1) {
+      fixedRadius -= 0.5 * lineWidth;
+      if (fixedRadius < 0.0) {
+        fixedRadius = 0.0
+      }
+    }
+    fixedRadius = Math.min(fixedRadius, rectangle.size.width * 0.5, rectangle.size.height * 0.5);
+    return fixedRadius;
+  };
+  var adjustRadius = MovingImages.adjustRadius;
+  
   MovingImages.makeJSONOvalOrRectBorder = function(layer, border, borderOptions) {
     // For now assume only non zero fill types.
     // Assume border is centred on outline.
     var frame = layer.frame();
-    log("makeJSONOvalOrRectBorder");
-    // log(frame.treeAsDictionary());
-    // log(layer.bounds().treeAsDictionary());
     var rectangle = convertMSRect(frame);
     var lineWidth = border.thickness();
     var position = border.position();
     var fixedRadius = layer.fixedRadius();
     
-    if (position == 2) {
-      rectangle.origin.x -= 0.5 * lineWidth;
-      rectangle.origin.y -= 0.5 * lineWidth;
-      rectangle.size.width += lineWidth;
-      rectangle.size.height += lineWidth;
-      if (fixedRadius > 0.0001) {
-        fixedRadius += 0.5 * lineWidth;
-      }
+    if (position === 2) {
+      rectangle = insetRect(frame, lineWidth);
     }
-    else if (position == 1) {
-      rectangle.origin.x += 0.5 * lineWidth;
-      rectangle.origin.y += 0.5 * lineWidth;
-      rectangle.size.width -= lineWidth;
-      rectangle.size.height -= lineWidth;
-      if (fixedRadius > 0.5 * lineWidth) {
-        fixedRadius -= 0.5 * lineWidth;
-      }
+    else if (position === 1) {
+      rectangle = insetRect(frame, -lineWidth);
     }
     var borderRect = {
       rect: rectangle,
       elementtype: "strokerectangle",
       linewidth: lineWidth
     };
-    // log(fillRect);
-    fixedRadius = Math.min(fixedRadius, frame.width() * 0.5, frame.height() * 0.5);
+    fixedRadius = adjustRadius(fixedRadius, position, lineWidth, rectangle);
     if (fixedRadius > 0.00001) {
       borderRect.radius = fixedRadius;
       borderRect.elementtype = "strokeroundedrectangle";
@@ -353,10 +372,6 @@ var MovingImages = {};
   MovingImages.makeJSONBorderShape = function(layer, border, borderOptions) {
     // For now assume only non zero fill types.
     // Assume border is centred on outline.
-    log("makeJSONBorderShape");
-    // log(layer.frame().treeAsDictionary());
-    // log(layer.bounds().treeAsDictionary());
-    // TODO: Will need to deal with fillType here.
 
     return {
       elementtype: "strokepath",
@@ -481,17 +496,13 @@ var MovingImages = {};
     if (movingImages === null) {
       return { elementtype: "arrayofelements" };
     }
-    // var frame = item.frame();
-    // log("In processItemInSelection");
-    // log(item.bounds());
-    // log(item.requiredRect())
     movingImages.viewBox = convertCGRect(item.bounds());
     movingImages.contexttransformation = [
       {
         transformationtype: "translate",
         translation: {
-          x: 0,
-          y: "$height"
+          x: "$offset",
+          y: "$height - $offset"
         }
       },
       {
