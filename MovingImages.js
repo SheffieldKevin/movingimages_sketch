@@ -49,7 +49,7 @@ var MovingImages = {};
     return dictionary;
   };
   var convertAlphaColor = MovingImages.convertAlphaColor;
-  
+
   MovingImages.convertMSColor = function(msColor) {
     if (msColor.alpha() < 0.997) {
       return convertAlphaColor(msColor);
@@ -60,6 +60,19 @@ var MovingImages = {};
   };
   var convertMSColor = MovingImages.convertMSColor;
 
+  MovingImages.convertNSColor = function(nsColor) {
+    if (nsColor.alphaComponent() < 0.997) {
+      return {      red: nsColor.redComponent(),
+                  green: nsColor.greenComponent(),
+                   blue: nsColor.blueComponent(),
+                  alpha: nsColor.alphaComponent(),
+  colorcolorprofilename: 'kCGColorSpaceSRGB' };
+    }
+    else {
+      return String(nsColor.hexValue());
+    }
+  };
+  var convertNSColor = MovingImages.convertNSColor;
 /*
   MovingImages.convertMSColors = function(msColors) {
     var numColors = msColors.count();
@@ -136,33 +149,7 @@ var MovingImages = {};
     return positions;
   };
   var positionsFromGradientStops = MovingImages.positionsFromGradientStops;
-/*
-  MovingImages.convertStringToPoint = function(pointString) {
-    var charactersToRemove = NSCharacterSet.characterSetWithCharactersInString('{} ');
-    var strippedString = pointString.stringByTrimmingCharactersInSet(charactersToRemove);
-    var commaSet = NSCharacterSet.characterSetWithCharactersInString(',');
-    var components = strippedString.componentsSeparatedByCharactersInSet(commaSet);
-    var x = components[0].doubleValue();
-    var y = components[1].doubleValue();
-    return {
-      x: x,
-      y: y
-    };
-  };
-  var convertStringToPoint = MovingImages.convertStringToPoint;
 
-  MovingImages.convertPointsToLine = function(pointsArray) {
-    // MSGradientPointArray
-    var thePoints = pointsArray.points();
-    var startPoint = MovingImages.convertStringToPoint(thePoints[0]);
-    var endPoint = MovingImages.convertStringToPoint(thePoints[1]);
-    return {
-      startpoint: startPoint,
-      endpoint: endPoint
-    };
-  };
-  var convertPointsToLine = MovingImages.convertPointsToLine;
-*/
   MovingImages.getObjectProperties = function(theObject) {
     var name = "(without name)";
     if (theObject.name) {
@@ -222,7 +209,7 @@ var MovingImages = {};
   };
   var MSBlendModeToMIBlendMode = MovingImages.MSBlendModeToMIBlendMode;
   
-  MovingImages.makeJSONFillRect = function(layer, fill, shadows) {
+  MovingImages.makeJSONFillRect = function(layer, fill, style) {
     var frame = layer.frame();
     var fillRect = {
       rect: convertMSRect(frame),
@@ -237,21 +224,37 @@ var MovingImages = {};
     fillRect.fillcolor = convertMSColor(fill.color());
     fillRect.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
     fillRect.opacity = fill.contextSettingsGeneric().opacity();
+
+    var shadows = style.shadows();
+    if (shadows.count() > 0) {
+      var shadow = shadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleShadow" && shadow.isEnabled()) {
+        fillShape.shadow = makeShadow(shadow);
+      }
+    }
+    
+    var innerShadows = style.innerShadows();
+    if (innerShadows.count() > 0) {
+      var shadow = innerShadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleInnerShadow" && shadow.isEnabled()) {
+        fillShape.innershadow = makeShadow(shadow);
+      }
+    }
     return fillRect;
   };
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
 
   MovingImages.makeShadow = function(shadow) {
     var shadow = {
-      blur: shadow.blurRadius(),
+      blur: "$scale * " + shadow.blurRadius(),
       fillcolor: convertMSColor(shadow.color()),
-      offset: { width: shadow.offsetX(), height: shadow.offsetY() }
+      offset: { width: "$scale * " + shadow.offsetX(), height: "-$scale * " + shadow.offsetY() }
     }
     return shadow;
   }
   var makeShadow = MovingImages.makeShadow;
 
-  MovingImages.makeJSONFillShape = function(layer, fill, shadows) {
+  MovingImages.makeJSONFillShape = function(layer, fill, style) {
     // TODO: Will need to deal with fillType here.
     var fillType = fill.fillType();
 
@@ -281,18 +284,27 @@ var MovingImages = {};
         fillShape.elementtype = "layerfillshape";
         break;
     }
+    var shadows = style.shadows();
     if (shadows.count() > 0) {
       var shadow = shadows.objectAtIndex(0);
       if (String(shadow.class()) === "MSStyleShadow" && shadow.isEnabled()) {
         fillShape.shadow = makeShadow(shadow);
       }
     }
-        
+    
+    var innerShadows = style.innerShadows();
+    if (innerShadows.count() > 0) {
+      var shadow = innerShadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleInnerShadow" && shadow.isEnabled()) {
+        fillShape.innershadow = makeShadow(shadow);
+        fillShape.elementtype = "fillinnershadowpath";
+      }
+    }  
     return fillShape;
   };
   var makeJSONFillShape = MovingImages.makeJSONFillShape;
 
-  MovingImages.processFillLayer = function(layer, fill, shadows) {
+  MovingImages.processFillLayer = function(layer, fill, style) {
     var elementType = "fillpath";
     
     if (layer.path().isRectangle()) {
@@ -303,10 +315,10 @@ var MovingImages = {};
     }
     var fillType = fill.fillType();
     if (fillType === 0 && elementType === "fillrectangle") {
-      return makeJSONFillRect(layer, fill, shadows);
+      return makeJSONFillRect(layer, fill, style);
     }
     else {
-      return makeJSONFillShape(layer, fill, shadows);
+      return makeJSONFillShape(layer, fill, style);
     }
   };
   var processFillLayer = MovingImages.processFillLayer;
@@ -413,34 +425,90 @@ var MovingImages = {};
   };
   var processBorderLayer = MovingImages.processBorderLayer;
   
+  MovingImages.processTextLayer = function(layer) {
+    // log(textLayer.treeAsDictionary());
+    var attributedString = textLayer.attributedString().attributedString();
+
+    var textElement = { elementtype: "drawbasicstring" };
+    textElement.stringtext = String(attributedString.string());
+
+    var attributes = [attributedString attributesAtIndex:0 effectiveRange:null];
+    var nsFont = attributes.objectForKey(@"NSFont");
+    textElement.postscriptfontname = String(nsFont.fontName());
+    textElement.fontsize = nsFont.pointSize();
+    var frame = layer.frame();
+    textElement.point = { x: 0.0, y: 0.0 };
+    textElement.blendmode = MSBlendModeToMIBlendMode(layer.style().contextSettingsGeneric().blendMode());
+    textElement["fillcolor"] = convertNSColor(attributes.objectForKey(@"NSColor"));
+    textElement.contexttransformation = [
+      {
+        transformationtype: "translate",
+        translation: {
+          x: frame.x(),
+          y: frame.y() + nsFont.pointSize()
+        }
+      },
+      {
+        transformationtype: "scale",
+        scale: {
+          x: 1.0,
+          y: -1.0
+        }
+      }
+    ];
+    return textElement;
+/*    
+    // log([attributes objectForKey:@"NSFont"]);
+    log(nsFont.treeAsDictionary());
+    log(nsFont.fontName());
+    log(nsFont.pointSize());
+    // log(attributedString.treeAsDictionary());
+    var color = attributes.objectForKey(@"NSColor");
+    // log(color.treeAsDictionary());
+    log(color.class());
+    log(color.hexValue());
+    log(color.alphaComponent());
+    log(color.redComponent());
+*/
+  };
+  var processTextLayer = MovingImages.processTextLayer;
+  
   MovingImages.processShapeGroup = function(shapeGroup) {
     var layers = shapeGroup.layers();
     var numLayers = layers.count();
-    var fills = shapeGroup.style().fills();
+    var style = shapeGroup.style();
+    var fills = style.fills();
     var numFills = fills.count();
-    var borders = shapeGroup.style().borders();
+    var borders = style.borders();
     var numBorders = borders.count();
     
     var elements = [];
     var layer;
     
-    var shadows = shapeGroup.style().shadows();
+    // var shadows = shapeGroup.style().shadows();
     for (var i = 0; i < numLayers; ++i) {
       for (var j = 0; j < numFills; ++j) {
         var layer = layers.objectAtIndex(i);
         var fill = fills.objectAtIndex(j);
-        if (fill.isEnabled()) {
-          elements.push(processFillLayer(layer, fill, shadows));
+        if (fill.isEnabled() && (String(layer.class()) !== "MSTextLayer")) {
+          elements.push(processFillLayer(layer, fill, style));
         }
       }
     }
     
-    var borderOptions = shapeGroup.style().borderOptions();
+    for (i = 0; i < numLayers; ++i) {
+      var layer = layers.objectAtIndex(i);
+      if (layer.class() === "MSTextLayer") {
+        elements.push(processTextLayer(layer))
+      }
+    }
+    
+    var borderOptions = style.borderOptions();
     for (i = 0; i < numLayers; ++i) {
       for (j = 0; j < numBorders; ++j) {
         var layer = layers.objectAtIndex(i);
         var border = borders.objectAtIndex(j);
-        if (border.isEnabled()) {
+        if (border.isEnabled()  && (String(layer.class()) !== "MSTextLayer")) {
           elements.push(processBorderLayer(layer, border, borderOptions));
         }
       }
@@ -475,8 +543,12 @@ var MovingImages = {};
         case "MSShapeGroup":
           elements.push(processShapeGroup(layer));
           break;
+        case "MSTextLayer":
+          log("Process text layer.")
+          elements.push(processTextLayer(layer));
+          break;
         default:
-          log(layer.treeAsDictionary());
+          // log(layer.treeAsDictionary());
           break;
       }
     }
