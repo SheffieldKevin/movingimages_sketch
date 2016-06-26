@@ -222,7 +222,7 @@ var MovingImages = {};
   };
   var MSBlendModeToMIBlendMode = MovingImages.MSBlendModeToMIBlendMode;
   
-  MovingImages.makeJSONFillRect = function(layer, fill) {
+  MovingImages.makeJSONFillRect = function(layer, fill, shadows) {
     var frame = layer.frame();
     var fillRect = {
       rect: convertMSRect(frame),
@@ -241,43 +241,58 @@ var MovingImages = {};
   };
   var makeJSONFillRect = MovingImages.makeJSONFillRect;
 
-  MovingImages.makeJSONFillShape = function(layer, fill) {
+  MovingImages.makeShadow = function(shadow) {
+    var shadow = {
+      blur: shadow.blurRadius(),
+      fillcolor: convertMSColor(shadow.color()),
+      offset: { width: shadow.offsetX(), height: shadow.offsetY() }
+    }
+    return shadow;
+  }
+  var makeShadow = MovingImages.makeShadow;
+
+  MovingImages.makeJSONFillShape = function(layer, fill, shadows) {
     // TODO: Will need to deal with fillType here.
     var fillType = fill.fillType();
+
+    var fillShape = {};
     
     switch(fillType) {
       case 0:
-        return {
-          elementtype: "fillpath",
-          svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
-          fillcolor: convertMSColor(fill.color()),
-          blendmode: MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode()),
-          opacity: fill.contextSettingsGeneric().opacity()
-        };
+        fillShape.elementtype = "fillpath";
+        fillShape.svgpath = String(layer.bezierPath().svgPathAttribute().stringValue());
+        fillShape.fillcolor = convertMSColor(fill.color());
+        fillShape.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
+        fillShape.opacity = fill.contextSettingsGeneric().opacity();
+        break;
       case 1:
         var gradient = fill.gradient();
         var frame = layer.frame();
         var stops = gradient.stops();
-        log(stops);
-        
-        return {
-          elementtype: "lineargradientfill",
-          svgpath: String(layer.bezierPath().svgPathAttribute().stringValue()),
-          blendmode: MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode()),
-          opacity: fill.contextSettingsGeneric().opacity(),
-          line: makeLinearGradientLine(gradient, frame),
-          arrayofcolors: colorsFromGradientStops(stops),
-          arrayoflocations: positionsFromGradientStops(stops)
-        };
+        fillShape.elementtype = "lineargradientfill";
+        fillShape.svgpath = String(layer.bezierPath().svgPathAttribute().stringValue());
+        fillShape.blendmode = MSBlendModeToMIBlendMode(fill.contextSettingsGeneric().blendMode());
+        fillShape.opacity = fill.contextSettingsGeneric().opacity();
+        fillShape.line = makeLinearGradientLine(gradient, frame);
+        fillShape.arrayofcolors = colorsFromGradientStops(stops);
+        fillShape.arrayoflocations = positionsFromGradientStops(stops);
+        break;
       default:
-        return {
-          elementtype: "layerfillshape"
-        };
+        fillShape.elementtype = "layerfillshape";
+        break;
     }
+    if (shadows.count() > 0) {
+      var shadow = shadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleShadow" && shadow.isEnabled()) {
+        fillShape.shadow = makeShadow(shadow);
+      }
+    }
+        
+    return fillShape;
   };
   var makeJSONFillShape = MovingImages.makeJSONFillShape;
 
-  MovingImages.processFillLayer = function(layer, fill) {
+  MovingImages.processFillLayer = function(layer, fill, shadows) {
     var elementType = "fillpath";
     
     if (layer.path().isRectangle()) {
@@ -288,10 +303,10 @@ var MovingImages = {};
     }
     var fillType = fill.fillType();
     if (fillType === 0 && elementType === "fillrectangle") {
-      return makeJSONFillRect(layer, fill);
+      return makeJSONFillRect(layer, fill, shadows);
     }
     else {
-      return makeJSONFillShape(layer, fill);
+      return makeJSONFillShape(layer, fill, shadows);
     }
   };
   var processFillLayer = MovingImages.processFillLayer;
@@ -409,12 +424,13 @@ var MovingImages = {};
     var elements = [];
     var layer;
     
+    var shadows = shapeGroup.style().shadows();
     for (var i = 0; i < numLayers; ++i) {
       for (var j = 0; j < numFills; ++j) {
         var layer = layers.objectAtIndex(i);
         var fill = fills.objectAtIndex(j);
         if (fill.isEnabled()) {
-          elements.push(processFillLayer(layer, fill));
+          elements.push(processFillLayer(layer, fill, shadows));
         }
       }
     }
@@ -504,7 +520,7 @@ var MovingImages = {};
         groupBounds = convertCGRect(item.rect());
         break;
       default:
-        return movingImages = null;
+        movingImages = null;
     }
     if (movingImages === null) {
       return { elementtype: "arrayofelements" };
