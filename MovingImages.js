@@ -40,10 +40,10 @@ var MovingImages = {};
   MovingImages.convertAlphaColor = function(msColor) {
     var hexString = String(msColor.hexValue());
     var dictionary = {
-      red: redComponent(hexString),
-      green: greenComponent(hexString),
-      blue: blueComponent(hexString),
-      alpha: msColor.alpha(),
+                        red: redComponent(hexString),
+                      green: greenComponent(hexString),
+                       blue: blueComponent(hexString),
+                      alpha: msColor.alpha(),
       colorcolorprofilename: 'kCGColorSpaceSRGB'
     };
     return dictionary;
@@ -61,12 +61,14 @@ var MovingImages = {};
   var convertMSColor = MovingImages.convertMSColor;
 
   MovingImages.convertNSColor = function(nsColor) {
+    log(nsColor);
     if (nsColor.alphaComponent() < 0.997) {
-      return {      red: nsColor.redComponent(),
-                  green: nsColor.greenComponent(),
-                   blue: nsColor.blueComponent(),
-                  alpha: nsColor.alphaComponent(),
-  colorcolorprofilename: 'kCGColorSpaceSRGB' };
+      return {
+                        red: nsColor.redComponent(),
+                      green: nsColor.greenComponent(),
+                       blue: nsColor.blueComponent(),
+                      alpha: nsColor.alphaComponent(),
+      colorcolorprofilename: 'kCGColorSpaceSRGB' };
     }
     else {
       return String(nsColor.hexValue());
@@ -426,8 +428,7 @@ var MovingImages = {};
   var processBorderLayer = MovingImages.processBorderLayer;
   
   MovingImages.processTextLayer = function(layer) {
-    // log(textLayer.treeAsDictionary());
-    var attributedString = textLayer.attributedString().attributedString();
+    var attributedString = layer.attributedString().attributedString();
 
     var textElement = { elementtype: "drawbasicstring" };
     textElement.stringtext = String(attributedString.string());
@@ -440,6 +441,23 @@ var MovingImages = {};
     textElement.point = { x: 0.0, y: 0.0 };
     textElement.blendmode = MSBlendModeToMIBlendMode(layer.style().contextSettingsGeneric().blendMode());
     textElement["fillcolor"] = convertNSColor(attributes.objectForKey(@"NSColor"));
+    var style = layer.style();
+    var shadows = style.shadows();
+    if (shadows.count() > 0) {
+      var shadow = shadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleShadow" && shadow.isEnabled()) {
+        textElement.shadow = makeShadow(shadow);
+      }
+    }
+    
+    var innerShadows = style.innerShadows();
+    if (innerShadows.count() > 0) {
+      var shadow = innerShadows.objectAtIndex(0);
+      if (String(shadow.class()) === "MSStyleInnerShadow" && shadow.isEnabled()) {
+        textElement.innershadow = makeShadow(shadow);
+      }
+    }  
+
     textElement.contexttransformation = [
       {
         transformationtype: "translate",
