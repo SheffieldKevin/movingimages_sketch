@@ -539,7 +539,7 @@ var MovingImages = {};
           elements.push(processShapeGroup(layer));
           break;
         case "MSTextLayer":
-          log("Process text layer.")
+          // log("Process text layer.")
           elements.push(processTextLayer(layer));
           break;
         default:
