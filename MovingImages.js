@@ -61,7 +61,6 @@ var MovingImages = {};
   var convertMSColor = MovingImages.convertMSColor;
 
   MovingImages.convertNSColor = function(nsColor) {
-    log(nsColor);
     if (nsColor.alphaComponent() < 0.997) {
       return {
                         red: nsColor.redComponent(),
