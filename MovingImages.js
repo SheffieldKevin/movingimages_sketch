@@ -75,17 +75,7 @@ var MovingImages = {};
     }
   };
   var convertNSColor = MovingImages.convertNSColor;
-/*
-  MovingImages.convertMSColors = function(msColors) {
-    var numColors = msColors.count();
-    var colors = [];
-    for (var i = 0 ; i < numColors ; ++i) {
-      colors.push(convertMSColor(msColors.objectAtIndex(i)));
-    }
-    return colors;
-  }
-  var convertMSColors = MovingImages.convertMSColors;
-*/
+
   MovingImages.convertMSRect = function(msRect) {
     return {
       size: {
@@ -475,19 +465,6 @@ var MovingImages = {};
       }
     ];
     return textElement;
-/*    
-    // log([attributes objectForKey:@"NSFont"]);
-    log(nsFont.treeAsDictionary());
-    log(nsFont.fontName());
-    log(nsFont.pointSize());
-    // log(attributedString.treeAsDictionary());
-    var color = attributes.objectForKey(@"NSColor");
-    // log(color.treeAsDictionary());
-    log(color.class());
-    log(color.hexValue());
-    log(color.alphaComponent());
-    log(color.redComponent());
-*/
   };
   var processTextLayer = MovingImages.processTextLayer;
   
