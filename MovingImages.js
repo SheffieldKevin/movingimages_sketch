@@ -471,9 +471,9 @@ var MovingImages = {};
     var layers = shapeGroup.layers();
     var numLayers = layers.count();
     var style = shapeGroup.style();
-    var fills = style.fills();
+    var fills = style.enabledFills();
     var numFills = fills.count();
-    var borders = style.borders();
+    var borders = style.enabledBorders();
     var numBorders = borders.count();
     
     var elements = [];
